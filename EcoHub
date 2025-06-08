@@ -1,0 +1,207 @@
+-- EcoHub UI: Auto Buy con Indicadores de Estado y Botones Separados
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+
+-- Crear ScreenGui
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "EcoHubUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = PlayerGui
+
+-- Ventana Principal
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 550, 0, 600)
+MainFrame.Position = UDim2.new(0.5, -275, 0.5, -300)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+MainFrame.Active = true
+MainFrame.Draggable = true
+
+-- Título
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.BackgroundColor3 = Color3.fromRGB(50,50,50)
+Title.TextColor3 = Color3.new(1,1,1)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 24
+Title.Text = "EcoHub"
+Title.BorderSizePixel = 0
+
+-- Pestañas Seeds / Gears
+local tabs = {"Seeds", "Gears"}
+local btns, frames = {}, {}
+for i, name in ipairs(tabs) do
+    local btn = Instance.new("TextButton", MainFrame)
+    btn.Size = UDim2.new(0, 120, 0, 30)
+    btn.Position = UDim2.new(0, 10 + (i-1)*130, 0, 50)
+    btn.Text = name
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 16
+    btn.BackgroundColor3 = Color3.fromRGB(70,70,70)
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.BorderSizePixel = 0
+    btns[name] = btn
+
+    local frm = Instance.new("Frame", MainFrame)
+    frm.Size = UDim2.new(1, -20, 1, -140)
+    frm.Position = UDim2.new(0, 10, 0, 90)
+    frm.BackgroundTransparency = 1
+    frm.Visible = false
+    frames[name] = frm
+end
+
+local function showTab(name)
+    for k,fr in pairs(frames) do fr.Visible = (k == name) end
+end
+
+for name, btn in pairs(btns) do
+    btn.MouseButton1Click:Connect(function() showTab(name) end)
+end
+showTab("Seeds")
+
+-- Listas reales
+local seedList = {
+    "Carrot","Strawberry","Blueberry","Orange Tulip","Tomato",
+    "Corn","Daffodil","Watermelon","Pumpkin","Apple",
+    "Bamboo","Coconut","Cactus","Dragon Fruit","Mango",
+    "Mushroom","Grape","Pepper","Cacao","Beanstalk","Ember Lily"
+}
+local gearList = {
+    "Watering Can","Trowel","Recall Wrench","Basic Sprinkler",
+    "Advanced Sprinkler","Godly Sprinkler","Lightning Rod",
+    "Master Sprinkler","Favourite Tool","Harvest Tool",
+    "Chocolate Sprinkler","Star Caller","Night Staff"
+}
+
+-- Función que crea UI con scroll, botones y estado
+local function setupList(frame, items, eventName, labelY)
+    -- ScrollingFrame
+    local scroll = Instance.new("ScrollingFrame", frame)
+    scroll.Size = UDim2.new(1,0,1,-labelY-30)
+    scroll.Position = UDim2.new(0,0,0,0)
+    scroll.CanvasSize = UDim2.new(0,0,0,0)
+    scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    scroll.ScrollBarThickness = 6
+    scroll.BackgroundTransparency = 1
+    scroll.BorderSizePixel = 0
+
+    local layout = Instance.new("UIListLayout", scroll)
+    layout.Padding = UDim.new(0,5)
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+    local selected = {}
+    for _, name in ipairs(items) do
+        local btn = Instance.new("TextButton", scroll)
+        btn.Size = UDim2.new(1,-20,0,30)
+        btn.Text = "[ ] "..name
+        btn.Font = Enum.Font.Gotham
+        btn.TextSize = 16
+        btn.TextColor3 = Color3.new(1,1,1)
+        btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+        btn.BorderSizePixel = 0
+        btn.LayoutOrder = #scroll:GetChildren()
+        btn.MouseButton1Click:Connect(function()
+            selected[name] = not selected[name]
+            btn.Text = (selected[name] and "[X] " or "[ ] ")..name
+        end)
+    end
+
+    -- Indicador de estado
+    local status = Instance.new("TextLabel", frame)
+    status.Size = UDim2.new(1, -20, 0, labelY)
+    status.Position = UDim2.new(0,10,1,-labelY-90)
+    status.BackgroundTransparency = 1
+    status.TextColor3 = Color3.new(1,1,1)
+    status.Font = Enum.Font.Gotham
+    status.TextSize = 18
+    status.Text = "Idle"
+
+    -- Botones de control
+    local btnSel = Instance.new("TextButton", frame)
+    btnSel.Size = UDim2.new(0.47,0,0,30)
+    btnSel.Position = UDim2.new(0,10,1,-55)
+    btnSel.Text = "Start Selected"
+    btnSel.Font = Enum.Font.GothamBold
+    btnSel.TextSize = 16
+    btnSel.BackgroundColor3 = Color3.fromRGB(0,150,0)
+    btnSel.TextColor3 = Color3.new(1,1,1)
+    btnSel.BorderSizePixel = 0
+
+    local btnStopSel = Instance.new("TextButton", frame)
+    btnStopSel.Size = UDim2.new(0.47,0,0,30)
+    btnStopSel.Position = UDim2.new(0.52,10,1,-55)
+    btnStopSel.Text = "Stop Selected"
+    btnStopSel.Font = Enum.Font.GothamBold
+    btnStopSel.TextSize = 16
+    btnStopSel.BackgroundColor3 = Color3.fromRGB(150,50,0)
+    btnStopSel.TextColor3 = Color3.new(1,1,1)
+    btnStopSel.BorderSizePixel = 0
+
+    local btnAll = Instance.new("TextButton", frame)
+    btnAll.Size = UDim2.new(0.47,0,0,30)
+    btnAll.Position = UDim2.new(0,10,1,-95)
+    btnAll.Text = "Start All"
+    btnAll.Font = Enum.Font.GothamBold
+    btnAll.TextSize = 16
+    btnAll.BackgroundColor3 = Color3.fromRGB(0,100,150)
+    btnAll.TextColor3 = Color3.new(1,1,1)
+    btnAll.BorderSizePixel = 0
+
+    local btnStopAll = Instance.new("TextButton", frame)
+    btnStopAll.Size = UDim2.new(0.47,0,0,30)
+    btnStopAll.Position = UDim2.new(0.52,10,1,-95)
+    btnStopAll.Text = "Stop All"
+    btnStopAll.Font = Enum.Font.GothamBold
+    btnStopAll.TextSize = 16
+    btnStopAll.BackgroundColor3 = Color3.fromRGB(150,0,100)
+    btnStopAll.TextColor3 = Color3.new(1,1,1)
+    btnStopAll.BorderSizePixel = 0
+
+    -- Estado de ejecución
+    local activeSel, activeAll = false, false
+
+    local function loop(func)
+        while func() do
+            if func == function() return activeSel end then
+                status.Text = "Running Selected..."
+                for name, sel in pairs(selected) do
+                    if sel then
+                        ReplicatedStorage.GameEvents:WaitForChild(eventName):FireServer(name)
+                    end
+                end
+            else
+                status.Text = "Running All..."
+                for _, name in ipairs(items) do
+                    ReplicatedStorage.GameEvents:WaitForChild(eventName):FireServer(name)
+                end
+            end
+            task.wait(0.3)
+        end
+        status.Text = "Idle"
+    end
+
+    btnSel.MouseButton1Click:Connect(function()
+        if not activeSel then
+            activeSel = true
+            task.spawn(function() loop(function() return activeSel end) end)
+        end
+    end)
+    btnStopSel.MouseButton1Click:Connect(function()
+        activeSel = false
+    end)
+    btnAll.MouseButton1Click:Connect(function()
+        if not activeAll then
+            activeAll = true
+            task.spawn(function() loop(function() return activeAll end) end)
+        end
+    end)
+    btnStopAll.MouseButton1Click:Connect(function()
+        activeAll = false
+    end)
+end
+
+-- Inicializar pestañas
+setupList(frames["Seeds"], seedList, "BuySeedStock", 30)
+setupList(frames["Gears"], gearList, "BuyGearStock", 30)
